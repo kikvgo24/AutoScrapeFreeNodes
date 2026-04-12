@@ -3,241 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoScrape - Next Gen Node Scraper</title>
+    <title>AutoScrape - 节点订阅聚合平台</title>
 
-    <!-- Bootstrap 样式 -->
+    <!-- Bootstrap & Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 
-    <!-- 项目样式 -->
+    <!-- 原项目样式 -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/subscription.css">
+
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #ffffff;
+        }
+        .subscription-card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
+        }
+        .subscription-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .subscription-url {
+            font-size: 0.85rem;
+            word-break: break-all;
+            background: #020617;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .stat-box {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-val {
+            font-size: 28px;
+            font-weight: bold;
+            color: #22c55e;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .loader-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #22c55e;
+            border-top: 6px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
 
-<!-- ===================== -->
 <!-- 加载动画 -->
-<!-- ===================== -->
-<div id="loader" class="loading-overlay" style="display:none;">
-    <div class="trae-loader"></div>
+<div id="loader" class="loading-overlay">
+    <div class="loader-spinner"></div>
 </div>
 
-<!-- ===================== -->
 <!-- 导航栏 -->
-<!-- ===================== -->
-<nav class="trae-nav">
-    <div class="container d-flex justify-content-between align-items-center">
-        <div class="navbar-brand" onclick="switchPage('home')">
-            AUTO<span class="logo-scrape">SCRAPE</span>
-        </div>
-        <div class="d-flex gap-4">
-            <span id="nav-dashboard" class="nav-link-custom" onclick="switchPage('dashboard')">
-                <i class="bi bi-speedometer2 me-2"></i>工作台
-            </span>
-            <span class="nav-link-custom" onclick="openOverlay('overlay-about')">
-                <i class="bi bi-info-circle me-2"></i>关于项目
-            </span>
-            <a href="https://github.com/kikvgo24/AutoScrapeFreeNodes" target="_blank"
-               class="nav-link-custom text-decoration-none">
-                <i class="bi bi-github me-2"></i>GitHub
-            </a>
-        </div>
+<nav class="navbar navbar-dark bg-dark py-3">
+    <div class="container d-flex justify-content-between">
+        <span class="navbar-brand fw-bold">AutoScrape</span>
+        <a href="https://github.com/kikvgo24/AutoScrapeFreeNodes" target="_blank" class="text-white text-decoration-none">
+            <i class="bi bi-github"></i> GitHub
+        </a>
     </div>
 </nav>
 
-<!-- ===================== -->
 <!-- 首页 -->
-<!-- ===================== -->
-<div id="page-home" class="page-section page-active">
-    <div class="container hero-section text-center">
-        <div class="hero-tag">DISTRIBUTED SCRAPING SYSTEM</div>
-        <h1 class="hero-title">
-            <span>采集免费节点</span>
-            <span class="logo-scrape">从未如此简单</span>
-        </h1>
-        <p class="text-secondary fs-5 mb-5 mx-auto" style="max-width: 650px;">
-            基于现代化技术栈构建的自动化数据流转系统。<br>
-            结合 GitHub Actions 高效同步，为社区提供实时、可靠的订阅分发服务。
-        </p>
-        <button class="btn px-5 py-3"
-                style="background:var(--trae-green); color:#000; font-weight:800;"
-                onclick="switchPage('dashboard')">
-            进入控制台 <i class="bi bi-arrow-right ms-2"></i>
-        </button>
-    </div>
+<div class="container text-center my-5">
+    <h1 class="fw-bold mb-3">免费节点订阅聚合平台</h1>
+    <p class="text-secondary">
+        自动抓取并整理公开网络中的 Clash、V2ray、Sing-Box 等订阅链接。
+    </p>
 </div>
 
-<!-- ===================== -->
-<!-- 控制台 -->
-<!-- ===================== -->
-<div id="page-dashboard" class="page-section">
-    <div class="container mt-5">
-
-        <!-- 统计信息 -->
-        <div class="stat-grid">
+<!-- 统计信息 -->
+<div class="container mb-4">
+    <div class="row g-3">
+        <div class="col-md-4">
             <div class="stat-box">
                 <div class="stat-val" id="total-nodes">0</div>
                 <div class="text-secondary small">总计节点</div>
             </div>
+        </div>
+        <div class="col-md-4">
             <div class="stat-box">
                 <div class="stat-val" id="total-sources">0</div>
-                <div class="text-secondary small">活跃源站</div>
+                <div class="text-secondary small">来源站点</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-val">6h</div>
-                <div class="text-secondary small">同步频率</div>
-            </div>
+        </div>
+        <div class="col-md-4">
             <div class="stat-box">
                 <div class="stat-val" id="last-update-time">--</div>
                 <div class="text-secondary small">最近更新时间</div>
             </div>
         </div>
-
-        <!-- 控制面板 -->
-        <div class="control-panel d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <span class="text-secondary small">协议筛选:</span>
-                <select id="type-filter" class="trae-select">
-                    <option value="all">所有协议</option>
-                    <option value="Clash">Clash</option>
-                    <option value="V2ray">V2ray</option>
-                    <option value="Sing-Box">Sing-Box</option>
-                    <option value="Shadowrocket">Shadowrocket</option>
-                    <option value="Quantumult">Quantumult</option>
-                    <option value="SS/SSR">SS/SSR</option>
-                    <option value="Trojan">Trojan</option>
-                    <option value="通用">通用</option>
-                    <option value="自定义">自定义</option>
-                </select>
-            </div>
-
-            <!-- 刷新/触发更新按钮 -->
-            <button id="refresh-btn" class="btn"
-                    style="background:var(--trae-green); color:#000; font-weight:700;">
-                <i class="bi bi-arrow-repeat me-1"></i> 刷新数据
-            </button>
-        </div>
-
-        <!-- 状态提示 -->
-        <div id="update-status" class="alert mt-3 d-none" role="alert"></div>
-
-        <!-- 订阅列表 -->
-        <div id="subscriptions-container" class="row g-4 mt-3"></div>
     </div>
 </div>
 
-<!-- ===================== -->
+<!-- 控制面板 -->
+<div class="container mb-4 d-flex justify-content-between flex-wrap gap-3">
+    <select id="type-filter" class="form-select w-auto">
+        <option value="all">所有协议</option>
+        <option value="Clash">Clash</option>
+        <option value="V2ray">V2ray</option>
+        <option value="Sing-Box">Sing-Box</option>
+        <option value="Shadowrocket">Shadowrocket</option>
+        <option value="Quantumult">Quantumult</option>
+        <option value="SS/SSR">SS/SSR</option>
+        <option value="Trojan">Trojan</option>
+        <option value="通用">通用</option>
+    </select>
+
+    <!-- 触发更新按钮 -->
+    <button id="refresh-btn" class="btn btn-success">
+        <i class="bi bi-arrow-repeat"></i> 触发更新
+    </button>
+</div>
+
+<!-- 订阅列表 -->
+<div class="container">
+    <div id="subscriptions-container" class="row g-4"></div>
+</div>
+
 <!-- 页脚 -->
-<!-- ===================== -->
-<footer class="text-center py-4 mt-5">
-    <div class="text-secondary smaller" style="letter-spacing: 2px;">
-        © 2026 AUTOSCRAPE. AN OPEN SOURCE PROJECT.
-    </div>
+<footer class="text-center text-secondary py-4 mt-5">
+    © 2026 AutoScrape - Open Source Project
 </footer>
 
-<!-- ===================== -->
-<!-- 原有脚本 -->
-<!-- ===================== -->
-<script src="js/config.js"></script>
+<!-- 数据文件 -->
 <script src="js/inline-data.js"></script>
-<script src="js/subscription-manager.js"></script>
-<script src="js/app.js"></script>
 
-<!-- ===================== -->
-<!-- 页面逻辑脚本 -->
-<!-- ===================== -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    const container = document.getElementById("subscriptions-container");
+    const filter = document.getElementById("type-filter");
 
-    const loader = document.getElementById('loader');
-    const refreshBtn = document.getElementById('refresh-btn');
-    const statusBox = document.getElementById('update-status');
+    let allSubscriptions = [];
+    let totalSources = 0;
 
-    // 页面切换
-    window.switchPage = function (p) {
-        document.querySelectorAll('.page-section')
-            .forEach(s => s.classList.remove('page-active'));
-        document.getElementById('page-' + p)
-            .classList.add('page-active');
+    // 解析数据
+    if (window.INLINE_DATA && Array.isArray(window.INLINE_DATA)) {
+        totalSources = window.INLINE_DATA.length;
 
-        document.querySelectorAll('.nav-link-custom')
-            .forEach(l => l.classList.remove('active'));
-        if (p === 'dashboard') {
-            document.getElementById('nav-dashboard')
-                .classList.add('active');
-        }
-        window.scrollTo(0, 0);
-    };
+        window.INLINE_DATA.forEach(site => {
+            const siteName = site.siteName || "未知来源";
 
-    // 显示最近更新时间
-    function updateLastUpdateTime() {
-        const el = document.getElementById('last-update-time');
-        if (el) {
-            el.textContent = new Date().toLocaleString('zh-CN');
-        }
-    }
-    updateLastUpdateTime();
-
-    // 显示状态信息
-    function showStatus(message, type = "success") {
-        statusBox.className = `alert alert-${type} mt-3`;
-        statusBox.textContent = message;
-        statusBox.classList.remove('d-none');
+            site.articles.forEach(article => {
+                article.subscriptions.forEach(sub => {
+                    allSubscriptions.push({
+                        type: sub.type,
+                        url: sub.url,
+                        description: sub.description,
+                        siteName: siteName,
+                        title: article.title
+                    });
+                });
+            });
+        });
     }
 
-    // 触发 GitHub Actions 更新
-    refreshBtn.addEventListener('click', async function () {
+    // 更新统计信息
+    document.getElementById("total-nodes").textContent = allSubscriptions.length;
+    document.getElementById("total-sources").textContent = totalSources;
+    document.getElementById("last-update-time").textContent =
+        new Date().toLocaleString("zh-CN");
 
-        const confirmUpdate = confirm(
-            "确定要手动触发节点数据更新吗？\n" +
-            "该操作将重新抓取并部署最新数据，预计需要1-2分钟。"
-        );
-        if (!confirmUpdate) return;
+    // 渲染函数
+    function renderSubscriptions(type = "all") {
+        container.innerHTML = "";
 
-        try {
-            loader.style.display = 'flex';
-            refreshBtn.disabled = true;
-            refreshBtn.innerHTML =
-                '<i class="bi bi-arrow-repeat me-1"></i> 更新中...';
+        const filtered = type === "all"
+            ? allSubscriptions
+            : allSubscriptions.filter(sub => sub.type === type);
 
-            showStatus("正在触发更新任务，请稍候...", "info");
+        filtered.forEach(sub => {
+            const card = document.createElement("div");
+            card.className = "col-md-6 col-lg-4";
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            card.innerHTML = `
+                <div class="subscription-card">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="badge bg-success">${sub.type}</span>
+                        <small class="text-secondary">${sub.siteName}</small>
+                    </div>
+                    <div class="fw-bold mb-2">${sub.title}</div>
+                    <div class="subscription-url mb-3">${sub.url}</div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-light"
+                            onclick="copyToClipboard('${sub.url}')">
+                            <i class="bi bi-clipboard"></i> 复制
+                        </button>
+                        <a href="${sub.url}" target="_blank"
+                           class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-box-arrow-up-right"></i> 打开
+                        </a>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
 
-            const response = await fetch(
-                'https://djb.20250420ulife.store/trigger-update',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    signal: controller.signal
-                }
-            );
+    // 初始渲染
+    renderSubscriptions();
 
-            clearTimeout(timeoutId);
-
-            const result = await response.json();
-
-            if (response.ok) {
-                showStatus("✅ 更新任务已成功触发！请等待1-2分钟后刷新页面查看最新数据。", "success");
-                updateLastUpdateTime();
-            } else {
-                showStatus("❌ 触发失败：" + (result.error || "未知错误"), "danger");
-            }
-
-        } catch (error) {
-            showStatus("❌ 请求失败：" + error.message, "danger");
-        } finally {
-            loader.style.display = 'none';
-            refreshBtn.disabled = false;
-            refreshBtn.innerHTML =
-                '<i class="bi bi-arrow-repeat me-1"></i> 刷新数据';
-        }
+    // 协议筛选
+    filter.addEventListener("change", function () {
+        renderSubscriptions(this.value);
     });
+});
 
+// 复制功能
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+        .then(() => alert("✅ 订阅链接已复制！"))
+        .catch(() => alert("❌ 复制失败"));
+}
+
+// 触发 GitHub Actions 更新
+document.getElementById("refresh-btn").addEventListener("click", async () => {
+    const loader = document.getElementById("loader");
+    if (!confirm("确定要触发更新吗？")) return;
+
+    try {
+        loader.style.display = "flex";
+
+        const response = await fetch(
+            "https://djb.20250420ulife.store/trigger-update",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "User-Agent": "AutoScrape-Web"
+                }
+            }
+        );
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert("✅ 更新任务已触发，请稍后刷新页面查看最新数据！");
+        } else {
+            alert("❌ 触发失败：" + (result.error || "未知错误"));
+        }
+    } catch (error) {
+        alert("❌ 请求失败：" + error.message);
+    } finally {
+        loader.style.display = "none";
+    }
 });
 </script>
 
