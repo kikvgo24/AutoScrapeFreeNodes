@@ -104,7 +104,7 @@
         <div class="col-md-4">
             <div class="stat-box">
                 <div class="stat-val" id="total-nodes">0</div>
-                <div class="text-secondary small">总计节点</div>
+                <div class="text-secondary small">总计订阅</div>
             </div>
         </div>
         <div class="col-md-4">
@@ -170,8 +170,8 @@ document.addEventListener("DOMContentLoaded", function () {
         window.INLINE_DATA.forEach(site => {
             const siteName = site.siteName || "未知来源";
 
-            site.articles.forEach(article => {
-                article.subscriptions.forEach(sub => {
+            (site.articles || []).forEach(article => {
+                (article.subscriptions || []).forEach(sub => {
                     allSubscriptions.push({
                         type: sub.type,
                         url: sub.url,
@@ -197,6 +197,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const filtered = type === "all"
             ? allSubscriptions
             : allSubscriptions.filter(sub => sub.type === type);
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="text-center text-secondary">暂无订阅数据</div>';
+            return;
+        }
 
         filtered.forEach(sub => {
             const card = document.createElement("div");
